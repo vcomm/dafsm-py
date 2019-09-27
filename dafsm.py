@@ -7,8 +7,11 @@ class Dafsm(object):
     def call(self, fname, cntx):
         raise NotImplementedError()
 
-    def test(self):
-        return self.call("model", "mustang")
+    def switch(self, cntx, sstate):
+        raise NotImplementedError()
+
+    def unswitch(self, cntx):
+        raise NotImplementedError()
 
     def getByKey(self, obj, key, value):
         item = None
@@ -85,7 +88,9 @@ class Dafsm(object):
 
     def event(self, cntx):
         try:
-            if cntx.get(cntx)["keystate"] is not None:
+            keystate = cntx.get(cntx)["keystate"]
+            if keystate is not None:
+                #print(cntx.get(cntx)['logic']['id'],"[",keystate['key'],"]")
                 trans = self.eventListener(cntx)
                 if trans is not  None:
                     nextstate = self.gotoNextstate(trans, cntx.get(cntx)["logic"])
@@ -93,7 +98,12 @@ class Dafsm(object):
                         self.exitAction(cntx)
                         self.effectAction(trans, cntx)
                         cntx.set(cntx, "keystate", nextstate)
-                        self.entryAction(cntx)
+                        superstate = nextstate.get("superstate")
+                        if superstate is not None:
+                            self.switch(cntx, superstate, nextstate.get("name"))
+                        else:
+                            self.entryAction(cntx)
+                        #print(cntx.get(cntx)['logic']['id'], "[", cntx.get(cntx)["keystate"]['key'], "]")
                     else:
                         print("FSM error: next state missing")
                 else:
@@ -104,4 +114,5 @@ class Dafsm(object):
             state = cntx.get(cntx)["keystate"]
             if state and state.get("transitions") is None:
                 cntx.set(cntx, "complete", True)
+                self.unswitch(cntx)
             return cntx
