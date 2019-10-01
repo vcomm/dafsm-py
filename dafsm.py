@@ -4,7 +4,13 @@ class Dafsm(object):
     def __init__(self, name):
         self.name = name
 
+    def trigger(self, fname, cntx):
+        raise NotImplementedError()
+
     def call(self, fname, cntx):
+        raise NotImplementedError()
+
+    def queuecall(self, cntx):
         raise NotImplementedError()
 
     def switch(self, cntx, sstate):
@@ -35,7 +41,7 @@ class Dafsm(object):
                 triggers = trans.get("triggers")
                 if triggers is not None:
                     for trig in triggers:
-                        res = self.call(trig.get("name"), cntx)
+                        res = self.trigger(trig.get("name"), cntx)
                         if res:
                             return trans
         return None
@@ -92,7 +98,7 @@ class Dafsm(object):
             if keystate is not None:
                 #print(cntx.get(cntx)['logic']['id'],"[",keystate['key'],"]")
                 trans = self.eventListener(cntx)
-                if trans is not  None:
+                if trans is not None:
                     nextstate = self.gotoNextstate(trans, cntx.get(cntx)["logic"])
                     if nextstate is not None:
                         self.exitAction(cntx)
@@ -103,6 +109,7 @@ class Dafsm(object):
                             self.switch(cntx, superstate, nextstate.get("name"))
                         else:
                             self.entryAction(cntx)
+                        self.queuecall(cntx)
                         #print(cntx.get(cntx)['logic']['id'], "[", cntx.get(cntx)["keystate"]['key'], "]")
                     else:
                         print("FSM error: next state missing")
