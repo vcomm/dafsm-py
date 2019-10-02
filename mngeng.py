@@ -17,10 +17,16 @@ class Content:
         "complete": True
     }
     _status_ = []
+    _engine_ = None
 
     # Constructor
     def __init__(self, name):
         self.name = name
+
+    def engine(self, engine):
+        # if issubclass(engine, Wrapper):
+        self._engine_ = engine
+        return self._engine_
 
     def bios(sel):
         raise NotImplementedError()
@@ -60,28 +66,34 @@ class Content:
         self.set(self, "keystate", istate)
         return self
 
+    def emit(self):
+        if self._engine_ is not None:
+            self._engine_.event(self)
+        return self
 
 class Wrapper(Dafsm):
     _logics_ = {}
     _seqfuncs_ = []
 
-    def __init__(self, name, content):
+    def __init__(self, name):
         super().__init__(name)
-        if issubclass(content, Content):
-            self.bios = content.bios(content)
-            self.cntx = content
-        else:
-            print("Error: Wrong Content inheritance")
+        # if issubclass(content, Content):
+        # self.bios = content.bios(content)
+        # self.cntx = content
+        # else:
+        # print("Error: Wrong Content inheritance")
 
     def trigger(self, fname, cntx):
-        if fname in self.bios:
-            return self.bios.get(fname)(cntx)
+        bios = cntx.bios(cntx)
+        if fname in bios:
+            return bios.get(fname)(cntx)
         else:
             print("The function reference key: " + fname + " not exist")
             return None
 
     def call(self, fname, cntx):
-        self._seqfuncs_.append(self.bios.get(fname))
+        bios = cntx.bios(cntx)
+        self._seqfuncs_.append(bios.get(fname))
         print('Accelerate functions seq')
 
     def queuecall(self, cntx):
@@ -95,15 +107,15 @@ class Wrapper(Dafsm):
             logic = self._logics_.get(name)
             if logic is None:
                 logic = self.load(self.read(sstate.get("link")))
-            self.cntx.shift(self.cntx, logic, super().getByKey(logic['states'], 'key', 'init'))
+            cntx.shift(cntx, logic, super().getByKey(logic['states'], 'key', 'init'))
         else:
             logic = self.load(self.read(sstate.get("link")))
-            self.cntx.shift(self.cntx, logic, super().getByKey(logic['states'], 'key', 'init'))
-        return super().event(cntx)
+            cntx.shift(cntx, logic, super().getByKey(logic['states'], 'key', 'init'))
+        return  # super().event(cntx)
 
     def unswitch(self, cntx):
-        self.cntx.unshift(self.cntx, self)
-        return super().event(cntx)
+        cntx.unshift(cntx, self)
+        return  # super().event(cntx)
 
     def read(self, link):
         with open(link) as f:
@@ -119,32 +131,33 @@ class Wrapper(Dafsm):
         self._logics_.update({lname: logic})
         return logic
 
-    def validate(self, lname):
+    def validate(self, lname, cntx):
         status = True
         try:
             logic = self._logics_.get(lname)
             states = logic['states']
+            bios = cntx.bios(cntx)
             if type(states) is list:
                 for state in states:
                     exits = state.get("exits")
                     if exits is not None:
                         for ext in exits:
                             fnc_name = ext.get("name")
-                            if self.bios.get(fnc_name) is None:
+                            if bios.get(fnc_name) is None:
                                 raise ValidateException('Wrong Exit function: ' + fnc_name)
 
                     stays = state.get("stays")
                     if stays is not None:
                         for stay in stays:
                             fnc_name = stay.get("name")
-                            if self.bios.get(fnc_name) is None:
+                            if bios.get(fnc_name) is None:
                                 raise ValidateException('Wrong Stay function: ' + fnc_name)
 
                     entries = state.get("entries")
                     if entries is not None:
                         for ent in entries:
                             fnc_name = ent.get("name")
-                            if self.bios.get(fnc_name) is None:
+                            if bios.get(fnc_name) is None:
                                 raise ValidateException('Wrong Entry function: ' + fnc_name)
 
                     transitions = state.get("transitions")
@@ -154,13 +167,13 @@ class Wrapper(Dafsm):
                             if triggers is not None:
                                 for trig in triggers:
                                     fnc_name = trig.get("name")
-                                    if self.bios.get(fnc_name) is None:
+                                    if bios.get(fnc_name) is None:
                                         raise ValidateException('Wrong Trigger function: ' + fnc_name)
                             effects = trans.get("effects")
                             if effects is not None:
                                 for eff in effects:
                                     fnc_name = eff.get("name")
-                                    if self.bios.get(fnc_name) is None:
+                                    if bios.get(fnc_name) is None:
                                         raise ValidateException('Wrong Effect function: ' + fnc_name)
             elif type(states) is dict:
                 raise ValidateException('State List is dictionary')
@@ -173,28 +186,15 @@ class Wrapper(Dafsm):
         finally:
             return status
 
-    def init(self, logic):
+    def init(self, logic, cntx):
         iState = super().getByKey(logic['states'], 'key', 'init')
         if iState != None:
-            self.cntx.set(self.cntx, "logic", logic)
-            self.cntx.set(self.cntx, "complete", False)
-            self.cntx.set(self.cntx, "keystate", iState)
-            self.cntx._status_.append({'logic': logic["id"], 'keystate': iState['key'], 'complete': False})
+            cntx.set(cntx, "logic", logic)
+            cntx.set(cntx, "complete", False)
+            cntx.set(cntx, "keystate", iState)
+            cntx._status_.append({'logic': logic["id"], 'keystate': iState['key'], 'complete': False})
             print("Initialization completed:", logic["prj"] + logic["id"])
-            return self.cntx
-        else:
-            print("Error: cannot find init state")
-        return None
-
-    def loadLogic(self, jsonlogic):
-        self.cntx.set(self.cntx, "logic", json.loads(jsonlogic))
-        states = self.cntx.get(self.cntx)['logic']['states']
-        iState = super().getByKey(states, "key", "init")
-        if iState != None:
-            self.cntx.set(self.cntx, "complete", False)
-            self.cntx.set(self.cntx, "keystate", iState)
-            print("Initialization completed")
-            return self.cntx
+            return cntx
         else:
             print("Error: cannot find init state")
         return None
@@ -202,8 +202,8 @@ class Wrapper(Dafsm):
 
 class AsyncWrapper(Wrapper):
     # Constructor
-    def __init__(self, name, content):
-        super().__init__(name, content)
+    def __init__(self, name):
+        super().__init__(name)
 
     async def seqcall(self, cntx):
         for func in self._seqfuncs_:
@@ -213,7 +213,8 @@ class AsyncWrapper(Wrapper):
                 func(cntx)
 
     def call(self, fname, cntx):
-        self._seqfuncs_.append(self.bios.get(fname))
+        bios = cntx.bios(cntx)
+        self._seqfuncs_.append(bios.get(fname))
         print('Accelerate functions seq')
 
     def queuecall(self, cntx):

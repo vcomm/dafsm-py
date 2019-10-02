@@ -3,7 +3,7 @@ import asyncio
 from mngeng import *
 
 
-class myContent(Content):
+class Cntn(Content):
     __counter__ = 0
 
     # Constructor
@@ -69,7 +69,7 @@ class myContent(Content):
         self.__counter__ += 1
 
     def fnLetsgo(self):
-        #await asyncio.sleep(1)
+        # await asyncio.sleep(1)
         print(time.time(), ": Run fnLetsgo:", self.__counter__)
         self.__counter__ += 1
 
@@ -79,25 +79,27 @@ class myContent(Content):
         return True
 
     def fnGoto(self):
-        #await asyncio.sleep(1)
+        # await asyncio.sleep(1)
         print(time.time(), ": Run fnGoto:", self.__counter__)
         self.__counter__ += 1
 
     def fnGoodbye(self):
-        #await asyncio.sleep(1)
+        # await asyncio.sleep(1)
         print(time.time(), ": Run fnGoodbye:", self.__counter__)
         self.__counter__ += 1
 
 
-engine = AsyncWrapper('test', myContent)
-data = engine.init(engine.load(engine.read('mainloop.json')))
+engine = AsyncWrapper('engine')
+data = engine.init(engine.load(engine.read('mainloop.json')), Cntn)
+data.engine(data, engine)
 
-print('Validate: ', engine.validate('mainloop'))
-
+print('Validate: ', engine.validate('mainloop', data))
 
 while data.get(data)["complete"] is not True:
-    data = engine.event(data)
+    #data = engine.event(data)
+    data = data.emit(data)
     time.sleep(1)
+
 
 # data = engine.event(data)
 # print("State: ",data.get(data)["keystate"])
