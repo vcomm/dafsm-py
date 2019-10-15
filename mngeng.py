@@ -212,10 +212,10 @@ class AsyncWrapper(Wrapper):
             else:
                 func(cntx)
 
-    def call(self, fname, cntx):
-        bios = cntx.bios(cntx)
-        self._seqfuncs_.append(bios.get(fname))
-        print('Accelerate functions seq')
+#    def call(self, fname, cntx):
+#        bios = cntx.bios(cntx)
+#        self._seqfuncs_.append(bios.get(fname))
+#        print('Accelerate functions seq')
 
     def queuecall(self, cntx):
         asyncio.run(self.seqcall(cntx))

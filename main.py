@@ -25,7 +25,7 @@ class Cntn(Content):
             "fnLetsgo": self.fnLetsgo,
             "evComplete": self.evComplete,
             "fnGoto": self.fnGoto,
-            "fnGoodbye": self.fnGoodbye
+            "fnGoodbye": self.fnGoodbye,
         }
 
     def ev_envComplete(self):
@@ -98,7 +98,7 @@ print('Validate: ', engine.validate('mainloop', data))
 while data.get(data)["complete"] is not True:
     #data = engine.event(data)
     data = data.emit(data)
-    time.sleep(1)
+    #time.sleep(1)
 
 
 # data = engine.event(data)

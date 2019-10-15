@@ -104,17 +104,17 @@ class Dafsm(object):
                         self.exitAction(cntx)
                         self.effectAction(trans, cntx)
                         cntx.set(cntx, "keystate", nextstate)
+                        self.entryAction(cntx)
                         superstate = nextstate.get("superstate")
                         if superstate is not None:
                             self.switch(cntx, superstate, nextstate.get("name"))
-                        else:
-                            self.entryAction(cntx)
                         self.queuecall(cntx)
                         #print(cntx.get(cntx)['logic']['id'], "[", cntx.get(cntx)["keystate"]['key'], "]")
                     else:
                         print("FSM error: next state missing")
                 else:
                     self.stayAction(cntx)
+                    self.queuecall(cntx)
         except BaseException as err:
             print(err)
         finally:
