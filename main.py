@@ -26,7 +26,27 @@ class Cntn(Content):
             "evComplete": self.evComplete,
             "fnGoto": self.fnGoto,
             "fnGoodbye": self.fnGoodbye,
+            "fnCount": self.fnCount,
+            "evCounFinish": self.evCounFinish,
+            "evContinue": self.evContinue,
+
         }
+
+    def evContinue(self):
+        if self.__counter__ < 1000:
+            return True
+        else:
+            return False
+
+    def evCounFinish(self):
+        if self.__counter__ > 1000:
+            return True
+        else:
+            return False
+
+    def fnCount(self):
+        print(time.time(), ": Run fnCount:", self.__counter__)
+        self.__counter__ += 100
 
     def ev_envComplete(self):
         print(time.time(), ": Run ev_envComplete:", self.__counter__)
