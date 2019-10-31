@@ -11,6 +11,7 @@ class ValidateException(Exception):
 
 
 class Content:
+    """
     _arg_ = {
         "logic": None,
         "keystate": None,
@@ -18,17 +19,24 @@ class Content:
     }
     _status_ = []
     _engine_ = None
-
+    """
     # Constructor
     def __init__(self, name):
         self.name = name
+        self._arg_ = {
+            "logic": None,
+            "keystate": None,
+            "complete": True
+        }
+        self._status_ = []
+        self._engine_ = None
 
     def engine(self, engine):
         # if issubclass(engine, Wrapper):
         self._engine_ = engine
         return self._engine_
 
-    def bios(sel):
+    def bios(self):
         raise NotImplementedError()
 
     def get(self):
@@ -46,9 +54,9 @@ class Content:
         item['keystate'] = self._arg_['keystate']['key']
         item['complete'] = self._arg_['complete']
         # -------------------
-        self.set(self, "logic", logic)
-        self.set(self, "complete", False)
-        self.set(self, "keystate", istate)
+        self.set("logic", logic)
+        self.set("complete", False)
+        self.set("keystate", istate)
         self._status_.append({'logic': logic["id"], 'keystate': istate['key'], 'complete': False})
         return self
 
@@ -60,10 +68,10 @@ class Content:
         item = self._status_[-1]
         lname = item['logic']
         logic = manager._logics_[lname]
-        self.set(self, "logic", logic)
-        self.set(self, "complete", item['complete'])
+        self.set("logic", logic)
+        self.set("complete", item['complete'])
         istate = manager.getByKey(logic['states'], 'key', item['keystate'])
-        self.set(self, "keystate", istate)
+        self.set("keystate", istate)
         return self
 
     def emit(self):
@@ -72,11 +80,14 @@ class Content:
         return self
 
 class Wrapper(Dafsm):
+    """
     _logics_ = {}
     _seqfuncs_ = []
-
+    """
     def __init__(self, name):
         super().__init__(name)
+        self._logics_ = {}
+        self._seqfuncs_ = []
         # if issubclass(content, Content):
         # self.bios = content.bios(content)
         # self.cntx = content
@@ -84,21 +95,21 @@ class Wrapper(Dafsm):
         # print("Error: Wrong Content inheritance")
 
     def trigger(self, fname, cntx):
-        bios = cntx.bios(cntx)
+        bios = cntx.bios()
         if fname in bios:
-            return bios.get(fname)(cntx)
+            return bios.get(fname)()
         else:
             print("The function reference key: " + fname + " not exist")
             return None
 
     def call(self, fname, cntx):
-        bios = cntx.bios(cntx)
+        bios = cntx.bios()
         self._seqfuncs_.append(bios.get(fname))
         print('Accelerate functions seq')
 
     def queuecall(self, cntx):
         for func in self._seqfuncs_:
-            result = func(cntx)
+            result = func()
         self._seqfuncs_.clear()
         print('Execute Queue calls')
 
@@ -107,14 +118,14 @@ class Wrapper(Dafsm):
             logic = self._logics_.get(name)
             if logic is None:
                 logic = self.load(self.read(sstate.get("link")))
-            cntx.shift(cntx, logic, super().getByKey(logic['states'], 'key', 'init'))
+            cntx.shift(logic, super().getByKey(logic['states'], 'key', 'init'))
         else:
             logic = self.load(self.read(sstate.get("link")))
-            cntx.shift(cntx, logic, super().getByKey(logic['states'], 'key', 'init'))
+            cntx.shift(logic, super().getByKey(logic['states'], 'key', 'init'))
         return  # super().event(cntx)
 
     def unswitch(self, cntx):
-        cntx.unshift(cntx, self)
+        cntx.unshift(self)
         return  # super().event(cntx)
 
     def read(self, link):
@@ -136,7 +147,7 @@ class Wrapper(Dafsm):
         try:
             logic = self._logics_.get(lname)
             states = logic['states']
-            bios = cntx.bios(cntx)
+            bios = cntx.bios()
             if type(states) is list:
                 for state in states:
                     exits = state.get("exits")
@@ -189,9 +200,9 @@ class Wrapper(Dafsm):
     def init(self, logic, cntx):
         iState = super().getByKey(logic['states'], 'key', 'init')
         if iState != None:
-            cntx.set(cntx, "logic", logic)
-            cntx.set(cntx, "complete", False)
-            cntx.set(cntx, "keystate", iState)
+            cntx.set("logic", logic)
+            cntx.set("complete", False)
+            cntx.set("keystate", iState)
             cntx._status_.append({'logic': logic["id"], 'keystate': iState['key'], 'complete': False})
             print("Initialization completed:", logic["prj"] + logic["id"])
             return cntx
@@ -208,9 +219,9 @@ class AsyncWrapper(Wrapper):
     async def seqcall(self, cntx):
         for func in self._seqfuncs_:
             if asyncio.iscoroutinefunction(func) is True:
-                await func(cntx)
+                await func()
             else:
-                func(cntx)
+                func()
 
 #    def call(self, fname, cntx):
 #        bios = cntx.bios(cntx)

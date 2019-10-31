@@ -32,7 +32,7 @@ class Dafsm(object):
     def eventListener(self, cntx):
         # fsm = cntx.get(cntx)["logic"]
         # state = self.getByKey(fsm.get("states"), "key", cntx.get(cntx)["keystate"])
-        state = cntx.get(cntx)["keystate"]
+        state = cntx.get()["keystate"]
         if state is None:
             return None
         transitions = state.get("transitions")
@@ -52,7 +52,7 @@ class Dafsm(object):
     def exitAction(self, cntx):
         # fsm = cntx.get(cntx)["logic"]
         # state = self.getByKey(fsm.get("states"), "key", cntx.get(cntx)["keystate"])
-        state = cntx.get(cntx)["keystate"]
+        state = cntx.get()["keystate"]
         if state is None:
             return None
         exits = state.get("exits")
@@ -64,7 +64,7 @@ class Dafsm(object):
     def entryAction(self, cntx):
         # fsm = cntx.get(cntx)["logic"]
         # state = self.getByKey(fsm.get("states"), "key", cntx.get(cntx)["keystate"])
-        state = cntx.get(cntx)["keystate"]
+        state = cntx.get()["keystate"]
         if state is None:
             return None
         entries = state.get("entries")
@@ -76,7 +76,7 @@ class Dafsm(object):
     def stayAction(self, cntx):
         # fsm = cntx.get(cntx)["logic"]
         # state = self.getByKey(fsm.get("states"), "key", cntx.get(cntx)["keystate"])
-        state = cntx.get(cntx)["keystate"]
+        state = cntx.get()["keystate"]
         if state is None:
             return None
         stays = state.get("stays")
@@ -94,16 +94,16 @@ class Dafsm(object):
 
     def event(self, cntx):
         try:
-            keystate = cntx.get(cntx)["keystate"]
+            keystate = cntx.get()["keystate"]
             if keystate is not None:
                 #print(cntx.get(cntx)['logic']['id'],"[",keystate['key'],"]")
                 trans = self.eventListener(cntx)
                 if trans is not None:
-                    nextstate = self.gotoNextstate(trans, cntx.get(cntx)["logic"])
+                    nextstate = self.gotoNextstate(trans, cntx.get()["logic"])
                     if nextstate is not None:
                         self.exitAction(cntx)
                         self.effectAction(trans, cntx)
-                        cntx.set(cntx, "keystate", nextstate)
+                        cntx.set("keystate", nextstate)
                         self.entryAction(cntx)
                         superstate = nextstate.get("superstate")
                         if superstate is not None:
@@ -118,8 +118,8 @@ class Dafsm(object):
         except BaseException as err:
             print(err)
         finally:
-            state = cntx.get(cntx)["keystate"]
+            state = cntx.get()["keystate"]
             if state and state.get("transitions") is None:
-                cntx.set(cntx, "complete", True)
+                cntx.set("complete", True)
                 self.unswitch(cntx)
             return cntx

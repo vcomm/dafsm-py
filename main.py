@@ -110,14 +110,14 @@ class Cntn(Content):
 
 
 engine = AsyncWrapper('engine')
-data = engine.init(engine.load(engine.read('mainloop.json')), Cntn)
-data.engine(data, engine)
+data = engine.init(engine.load(engine.read('mainloop.json')), Cntn('mydata'))
+data.engine(engine)
 
 print('Validate: ', engine.validate('mainloop', data))
 
-while data.get(data)["complete"] is not True:
+while data.get()["complete"] is not True:
     #data = engine.event(data)
-    data = data.emit(data)
+    data = data.emit()
     #time.sleep(1)
 
 
